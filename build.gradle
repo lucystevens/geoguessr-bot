@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+group 'uk.co.lukestevens'
+version '1.0-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/lukecmstevens/packages")
+        credentials {
+            username = System.getenv("GH_USER")
+            password = System.getenv("GH_TOKEN")
+        }
+    }
+
+}
+
+
+
+dependencies {
+    compileOnly 'uk.co.lukestevens:base-lib:2.1.0'
+    implementation 'uk.co.lukestevens:db-lib:2.0.0'
+    implementation 'uk.co.lukestevens:config-lib:2.0.0'
+    implementation 'uk.co.lukestevens:logging-lib:2.0.0'
+
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation 'com.google.inject:guice:4.2.2'
+    implementation 'com.squareup.okhttp3:okhttp:4.4.1'
+    implementation 'org.postgresql:postgresql:42.2.6'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    testImplementation 'org.mockito:mockito-core:3.6.0'
+}
+
+test {
+    useJUnitPlatform()
+}
