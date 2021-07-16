@@ -42,7 +42,7 @@ public class SlackService {
     public void sendResultsMessage(Game game){
         List<PlayerScore> scores = game.getPlayerScores()
                 .stream()
-                .sorted(Comparator.comparing(PlayerScore::getScore))
+                .sorted(Comparator.comparing(PlayerScore::getScore).reversed())
                 .collect(Collectors.toList());
 
         StringBuilder payload = new StringBuilder("*The results are in!*\n");
