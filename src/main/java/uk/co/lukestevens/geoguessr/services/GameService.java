@@ -1,5 +1,6 @@
 package uk.co.lukestevens.geoguessr.services;
 
+import com.google.common.base.Functions;
 import uk.co.lukestevens.config.Config;
 import uk.co.lukestevens.geoguessr.models.*;
 import uk.co.lukestevens.geoguessr.util.CacheBuilder;
@@ -13,8 +14,10 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class GameService {
 
@@ -24,6 +27,7 @@ public class GameService {
     private final Dao<Player> playerDao;
 
     private final Cached<List<GameOption>> gameOptions;
+    private final Cached<Map<String, Player>> players;
 
     @Inject
     public GameService(LoggingProvider loggingProvider, DaoProvider daoProvider) {
@@ -35,6 +39,11 @@ public class GameService {
         Dao<GameOption> gameOptionsDao = daoProvider.getDao(GameOption.class);
         this.gameOptions = CacheBuilder
                 .withSource(gameOptionsDao::list)
+                .withCacheLength(1, TimeUnit.HOURS)
+                .build();
+
+        this.players = CacheBuilder
+                .withSource(this::getPlayers)
                 .withCacheLength(1, TimeUnit.HOURS)
                 .build();
     }
@@ -73,12 +82,19 @@ public class GameService {
         gameDao.save(game);
     }
 
+    public Map<String, Player> getPlayers() throws IOException {
+        return playerDao.list()
+                .stream()
+                .collect(Collectors.toMap(Player::getGeoguessrId, p -> p));
+    }
+
     public void updateResultForGame(Game game, ChallengeResult result) throws IOException {
         PlayerScore playerScore = game.getPlayerScores()
                 .stream()
                 .filter(ps -> ps.getPlayer().getGeoguessrId().equals(result.getUserId()))
                 .findFirst()
-                .orElseGet(() -> new PlayerScore(game, new Player(result.getUserId(), result.getPlayerName())));
+                .orElseGet(() -> new PlayerScore(game,
+                        players.get().computeIfAbsent(result.getUserId(), id -> new Player(id, result.getPlayerName()))));
 
         playerScore.setScore(result.getTotalScore());
         playerDao.save(playerScore.getPlayer());
