@@ -24,6 +24,9 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
+          
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Write project properties to env file
         run: ./gradlew exportProperties
