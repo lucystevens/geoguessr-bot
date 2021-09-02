@@ -1,0 +1,2 @@
+0 10 * * FRI java -jar /app/application.jar "createChallenge" >> /proc/1/fd/1 2> /proc/1/fd/2
+0 10 * * MON java -jar /app/application.jar "postChallengeResults" >> /proc/1/fd/1 2> /proc/1/fd/2
