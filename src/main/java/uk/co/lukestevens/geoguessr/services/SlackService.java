@@ -6,6 +6,7 @@ import okhttp3.*;
 import uk.co.lukestevens.config.Config;
 import uk.co.lukestevens.geoguessr.models.Game;
 import uk.co.lukestevens.geoguessr.models.PlayerScore;
+import uk.co.lukestevens.geoguessr.util.StringTemplate;
 import uk.co.lukestevens.logging.Logger;
 import uk.co.lukestevens.logging.LoggingProvider;
 
@@ -36,7 +37,12 @@ public class SlackService {
         String messageTemplate = config.getAsStringOrDefault(CHALLENGE_TEMPLATE_KEY, CHALLENGE_TEMPLATE_DEFAULT);
         String challengeUrl = "https://www.geoguessr.com/challenge/" + game.getChallengeToken();
         logger.info("Sending challenge " + challengeUrl);
-        sendSlackMessage(String.format(messageTemplate, challengeUrl));
+        String message = StringTemplate.fromTemplate(messageTemplate)
+                .withVariable("challengeUrl", challengeUrl)
+                .withVariable("gameOption", game.getGameOption().getDescription())
+                .withVariable("timeLimit", game.getGameOption().getTimeLimit())
+                .build();
+        sendSlackMessage(message);
     }
 
     public void sendResultsMessage(Game game){

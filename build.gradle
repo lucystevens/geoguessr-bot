@@ -4,7 +4,6 @@ plugins {
 }
 
 group 'uk.co.lukestevens'
-version '1.0-SNAPSHOT'
 sourceCompatibility = '11'
 
 repositories {
@@ -25,14 +24,14 @@ repositories {
 
 dependencies {
     compileOnly 'uk.co.lukestevens:base-lib:2.1.0'
-    implementation 'uk.co.lukestevens:db-lib:2.0.0'
-    implementation 'uk.co.lukestevens:config-lib:2.0.0'
-    implementation 'uk.co.lukestevens:logging-lib:2.0.0'
+    compile 'uk.co.lukestevens:db-lib:2.0.0'
+    compile 'uk.co.lukestevens:config-lib:2.0.0'
+    compile 'uk.co.lukestevens:logging-lib:2.0.0'
 
-    implementation 'com.google.code.gson:gson:2.8.5'
-    implementation 'com.google.inject:guice:4.2.2'
-    implementation 'com.squareup.okhttp3:okhttp:4.4.1'
-    implementation 'org.postgresql:postgresql:42.2.6'
+    compile 'com.google.code.gson:gson:2.8.5'
+    compile 'com.google.inject:guice:4.2.2'
+    compile 'com.squareup.okhttp3:okhttp:4.4.1'
+    compile 'org.postgresql:postgresql:42.2.6'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
@@ -41,4 +40,73 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+task fulljar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'uk.co.lukestevens.geoguessr.GeoGuessrBotMain'
+    }
+    from {
+        (configurations.runtime).collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    with jar
+}
+
+task exportProperties {
+    doLast {
+        File githubEnv = new File(System.getenv("GITHUB_ENV"))
+        githubEnv.withWriterAppend { out ->
+            out.println "PROJECT_VERSION=$rootProject.version"
+            out.println "PROJECT_NAME=$rootProject.name"
+        }
+    }
+}
+
+static def setVersion(String newVersion) {
+    File properties = new File("gradle.properties")
+    properties.withWriter {
+        it.println "version=$newVersion"
+    }
+}
+
+static String removeSuffix(String version) {
+    int index = version.indexOf("-")
+    if(index > -1) {
+        version = version.substring(0, index)
+    }
+    return version
+}
+
+task finaliseVersion {
+    doLast {
+        String currentVersion = rootProject.version.toString()
+        String newVersion = removeSuffix(currentVersion)
+        if(currentVersion != newVersion) {
+            setVersion(newVersion)
+        }
+    }
+}
+
+task bumpVersion {
+    doLast {
+        String currentVersion = rootProject.version.toString()
+        String finalVersion = removeSuffix(currentVersion)
+        String[] versionParts = finalVersion.split("\\.")
+        if(versionParts.length < 2){
+            throw new IllegalArgumentException("Version must have at least major and minor identifier")
+        }
+
+        // Add major and minor versions
+        StringBuilder newVersion = new StringBuilder(versionParts[0])
+            .append(".")
+            .append(Integer.parseInt(versionParts[1]) + 1)
+        for(int i = 2; i < versionParts.length; i++){
+            newVersion.append(".0") // zero all other parts
+        }
+        newVersion.append("-beta")
+
+        setVersion(newVersion.toString())
+    }
 }
