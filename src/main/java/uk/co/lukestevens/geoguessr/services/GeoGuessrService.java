@@ -60,8 +60,9 @@ public class GeoGuessrService {
         Game game = null;
 
         try(Response response = client.newCall(request).execute()) {
+            String responseBodyString = getBody(response);
             if(response.code() == 200){
-                JsonObject responseBody = gson.fromJson(response.body().string(), JsonObject.class);
+                JsonObject responseBody = gson.fromJson(responseBodyString, JsonObject.class);
                 if(responseBody.has("token")){
                     String token = responseBody.get("token").getAsString();
                     game = new Game(token, option);
@@ -71,7 +72,7 @@ public class GeoGuessrService {
                 }
             }
             else {
-                logger.error("Expected 200 response but received " + response.code());
+                logger.error("Expected 200 response but received " + response.code() + ". Content: " + responseBodyString);
             }
         }
 
@@ -92,15 +93,21 @@ public class GeoGuessrService {
                 .build();
 
         try(Response response = client.newCall(request).execute()) {
+            String body = getBody(response);
             if(response.code() == 200){
                 Type listType = new TypeToken<ArrayList<ChallengeResult>>(){}.getType();
-                return gson.fromJson(response.body().string(), listType);
+                return gson.fromJson(body, listType);
             }
             else {
-                logger.error("Expected 200 response but received " + response.code());
+                logger.error("Expected 200 response but received " + response.code() + ". Content: " + body);
                 return new ArrayList<>();
             }
         }
+    }
+
+    String getBody(Response response) throws IOException {
+        ResponseBody body = response.body();
+        return body != null? body.string() : null;
     }
 
     String getCookieHeader(){
