@@ -7,6 +7,10 @@ on:
     branches:
       - develop
 
+env:
+  GH_USER: lukecmstevens
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   build:
 
@@ -21,5 +25,5 @@ jobs:
         with:
           java-version: 11
 
-      - name: Write project properties to env file
+      - name: Run integration tests
         run: ./gradlew integrationTest
