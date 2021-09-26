@@ -22,9 +22,13 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-# intellij files
+# ide files
 .idea
 build
+.project
+.classpath
+bin
+.settings
 
 # include gradle.jar
 !gradle/wrapper/gradle-wrapper.jar
