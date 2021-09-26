@@ -26,4 +26,4 @@ jobs:
           java-version: 11
 
       - name: Run integration tests
-        run: ./gradlew integrationTest
+        run: ./gradlew clean pullDatabaseContainer integrationTest
