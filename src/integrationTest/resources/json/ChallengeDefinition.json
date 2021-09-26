@@ -1,0 +1,7 @@
+{
+  "map": "world",
+  "forbidMoving": false,
+  "forbidRotating": false,
+  "forbidZooming": false,
+  "timeLimit": 300
+}

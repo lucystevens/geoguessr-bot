@@ -1,0 +1,20 @@
+[
+  {
+    "gameToken": "mock-token",
+    "playerName": "Alice",
+    "userId": "geo-1",
+    "totalScore": 1000
+  },
+  {
+    "gameToken": "mock-token",
+    "playerName": "Bob Bobson",
+    "userId": "geo-2",
+    "totalScore": 500
+  },
+  {
+    "gameToken": "mock-token",
+    "playerName": "Carl",
+    "userId": "geo-3",
+    "totalScore": 2000
+  }
+]

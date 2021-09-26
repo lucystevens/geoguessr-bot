@@ -1,6 +1,10 @@
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
+
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'com.bmuschko.docker-remote-api' version "6.7.0"
 }
 
 group 'uk.co.lukestevens'
@@ -20,7 +24,23 @@ repositories {
 
 }
 
+sourceSets {
+    main.java.srcDirs += 'src/main/java/'
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file("src/integrationTest/java")
+        }
+        resources.srcDir file("src/integrationTest/resources")
+    }
+}
 
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntme.extendsFrom testRuntime
+}
 
 dependencies {
     compileOnly 'uk.co.lukestevens:base-lib:2.1.0'
@@ -33,13 +53,40 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:4.4.1'
     compile 'org.postgresql:postgresql:42.2.6'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
-    testImplementation 'org.mockito:mockito-core:3.6.0'
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testCompile 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    testCompile 'org.mockito:mockito-core:3.6.0'
+
+    integrationTestImplementation 'com.github.tomakehurst:wiremock-jre8:2.31.0'
 }
 
-test {
-    useJUnitPlatform()
+/**
+ *  Docker
+ */
+def dbSchemasImage = "lukecmstevens/db-schemas:latest"
+
+task pullDatabaseContainer(type: DockerPullImage) {
+    image.set dbSchemasImage
+}
+
+task createDatabaseContainer(type: DockerCreateContainer) {
+    imageId.set dbSchemasImage
+    hostConfig.portBindings.set Collections.singletonList("9001:5432")
+}
+
+task startDatabaseContainer(type: DockerStartContainer) {
+    dependsOn createDatabaseContainer
+    targetContainerId createDatabaseContainer.containerId
+
+    doLast {
+        println "Sleeping while container comes up . . ."
+        sleep 10 * 1000
+    }
+}
+
+task stopDatabaseContainer(type: DockerStopContainer) {
+    dependsOn startDatabaseContainer
+    targetContainerId startDatabaseContainer.containerId
 }
 
 task fulljar(type: Jar) {
@@ -53,6 +100,29 @@ task fulljar(type: Jar) {
     }
     with jar
 }
+
+/**
+ *  Testing
+ */
+
+test {
+    useJUnitPlatform()
+}
+
+task integrationTest(type: Test) {
+    dependsOn startDatabaseContainer
+
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+
+    finalizedBy stopDatabaseContainer
+}
+
+/**
+ *  Scripts
+ */
 
 task exportProperties {
     doLast {

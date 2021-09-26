@@ -1,4 +1,4 @@
-# Checks the gradlew file has been made executable (tests to be added later)
+# Runs integration tests
 
 name: test
 
@@ -22,7 +22,4 @@ jobs:
           java-version: 11
 
       - name: Write project properties to env file
-        run: ./gradlew exportProperties
-
-      - name: Print project properties
-        run: echo ${{ env.PROJECT_NAME }}:${{ env.PROJECT_VERSION }}
+        run: ./gradlew integrationTest

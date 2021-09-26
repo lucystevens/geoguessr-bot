@@ -1,7 +1,5 @@
 package uk.co.lukestevens.geoguessr.models;
 
-import org.hibernate.annotations.GenericGenerator;
-
 import javax.persistence.*;
 
 @Entity

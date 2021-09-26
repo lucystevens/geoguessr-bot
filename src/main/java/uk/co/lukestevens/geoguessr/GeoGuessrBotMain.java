@@ -3,6 +3,7 @@ package uk.co.lukestevens.geoguessr;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import uk.co.lukestevens.geoguessr.injection.InjectModule;
+import uk.co.lukestevens.geoguessr.util.SystemExit;
 import uk.co.lukestevens.utils.EnvironmentVariables;
 
 public class GeoGuessrBotMain {
@@ -30,7 +31,7 @@ public class GeoGuessrBotMain {
         else {
             System.err.println(errorMessage);
         }
-        System.exit(0);
+        SystemExit.forceExit(0);
     }
 
 }
