@@ -28,6 +28,12 @@ public class GeoGuessrBotMain {
         else if(args[0].equals("postChallengeResults")) {
             bot.postChallengeResults();
         }
+        else if(args[0].equals("updateAllChallengeResults")) {
+            bot.updateAllChallengeResults();
+        }
+        else if(args[0].equals("generateStats")) {
+            bot.generateStats();
+        }
         else {
             System.err.println(errorMessage);
         }

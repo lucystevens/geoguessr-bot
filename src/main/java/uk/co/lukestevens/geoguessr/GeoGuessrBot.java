@@ -1,17 +1,16 @@
 package uk.co.lukestevens.geoguessr;
 
 import uk.co.lukestevens.config.Config;
-import uk.co.lukestevens.geoguessr.models.ChallengeResult;
-import uk.co.lukestevens.geoguessr.models.Game;
-import uk.co.lukestevens.geoguessr.models.GameOption;
+import uk.co.lukestevens.geoguessr.models.*;
 import uk.co.lukestevens.geoguessr.services.GameService;
 import uk.co.lukestevens.geoguessr.services.GeoGuessrService;
 import uk.co.lukestevens.geoguessr.services.SlackService;
+import uk.co.lukestevens.geoguessr.stats.PlayerStats;
 import uk.co.lukestevens.logging.Logger;
 import uk.co.lukestevens.logging.LoggingProvider;
 
 import javax.inject.Inject;
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,6 +70,44 @@ public class GeoGuessrBot {
             gameService.saveGame(game);
         } catch (Exception e){
             logger.error("Error when posting results");
+            logger.error(e);
+        }
+    }
+
+    public void updateAllChallengeResults(){
+        List<Game> games = new ArrayList<>();
+        try {
+            games = gameService.getAllGames();
+        }  catch (Exception e){
+            logger.error("Error when fetching games");
+            logger.error(e);
+        }
+
+        for(Game game : games){
+            try {
+                List<ChallengeResult> results = geoGuessrService.getResults(game.getChallengeToken());
+                if(!results.isEmpty()){
+                    game.setResultsPosted(true);
+                    gameService.updateResultsForGame(game, results);
+                }
+            }  catch (Exception e){
+                logger.error("Error when updating results for game " + game.getChallengeToken());
+                logger.error(e);
+            }
+        }
+    }
+
+    public void generateStats(){
+        try {
+            gameService.getPlayers().values().stream()
+                    .map(PlayerStats::new)
+                    .forEach(playerStats -> {
+                        playerStats.generateStats();
+                        System.out.println(playerStats);
+                    });
+
+        }  catch (Exception e){
+            logger.error("Error when generating stats");
             logger.error(e);
         }
     }

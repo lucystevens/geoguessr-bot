@@ -58,6 +58,10 @@ public class GameService {
                 .max(Comparator.comparing(Game::getCreatedAt));
     }
 
+    public List<Game> getAllGames() throws IOException {
+        return gameDao.list();
+    }
+
     public GameOption getRandomGameOption(){
         List<GameOption> gameOptions = this.gameOptions.get();
         int totalWeight = gameOptions.stream().mapToInt(GameOption::getWeighting).sum();
