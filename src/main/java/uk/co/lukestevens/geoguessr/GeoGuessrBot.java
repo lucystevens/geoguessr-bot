@@ -5,14 +5,19 @@ import uk.co.lukestevens.geoguessr.models.*;
 import uk.co.lukestevens.geoguessr.services.GameService;
 import uk.co.lukestevens.geoguessr.services.GeoGuessrService;
 import uk.co.lukestevens.geoguessr.services.SlackService;
+import uk.co.lukestevens.geoguessr.stats.GameStats;
 import uk.co.lukestevens.geoguessr.stats.PlayerStats;
 import uk.co.lukestevens.logging.Logger;
 import uk.co.lukestevens.logging.LoggingProvider;
+import uk.co.lukestevens.utils.Dates;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.time.*;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.TemporalField;
+import java.util.*;
 
 public class GeoGuessrBot {
 
@@ -32,52 +37,72 @@ public class GeoGuessrBot {
         this.slackService = slackService;
     }
 
-    public void createChallenge() {
+    public void createChallenges() {
         try {
-            GameOption gameOption = gameService.getRandomGameOption();
-            Game game = geoGuessrService.createChallenge(gameOption);
+            DayOfWeek day = DayOfWeek.of(Dates.getCalendar().get(Calendar.DAY_OF_WEEK));
+            for(League league : gameService.getLeaguesForChallengeDay(day)){
+                createChallenge(league);
+            }
+        } catch (Exception e){
+            logger.error("Error when creating challenges");
+            logger.error(e);
+        }
+    }
+
+    public void createChallenge(League league) {
+        try {
+            GameOption gameOption = gameService.getRandomGameOption(league);
+            Game game = geoGuessrService.createChallenge(gameOption, league.getApiCredentials());
+            // Set post results after to the next results day for the league
+            game.setPostResultsAfter(LocalDateTime.ofInstant(
+                    Dates.now().toInstant(), ZoneId.systemDefault())
+                    .with(TemporalAdjusters.next(game.getLeague().getResultsDay()))
+                    .with(ChronoField.NANO_OF_DAY, 0).toInstant(ZoneOffset.UTC));
             gameService.saveGame(game);
             slackService.sendChallengeMessage(game);
         } catch (Exception e){
-            logger.error("Error when creating a new challenge");
+            logger.error("Error when creating a new challenge for league " + league.getName());
             logger.error(e);
         }
     }
 
     public void postChallengeResults(){
         try {
-            Optional<Game> optionalGame = gameService.getMostRecentGame();
-            if(optionalGame.isEmpty()) {
-                logger.warning("No recent games found.");
+            List<Game> games = gameService.getGamesToPostResultsFor();
+            if(games.isEmpty()) {
+                logger.info("No games found to post results for");
                 return;
             }
 
-            Game game = optionalGame.get();
-            if(game.isResultsPosted()) {
-                logger.warning("Most recent game results have already been posted.");
-                return;
+            for(Game game : games) {
+                slackService.sendResultsMessage(game);
+                game.setResultsPosted(true);
+                gameService.saveGame(game);
             }
-
-            List<ChallengeResult> results = geoGuessrService.getResults(game.getChallengeToken());
-            if(results.isEmpty()) {
-                logger.warning("Most recent game (" + game.getChallengeToken() + ") has no scores.");
-                return;
-            }
-
-            gameService.updateResultsForGame(game, results);
-            slackService.sendResultsMessage(game);
-            game.setResultsPosted(true);
-            gameService.saveGame(game);
         } catch (Exception e){
             logger.error("Error when posting results");
             logger.error(e);
         }
     }
 
-    public void updateAllChallengeResults(){
+    public void updateChallengeResults(){
+        // If last day of month then since first day
+        // else since one week ago
+        LocalDateTime sinceWhen = LocalDateTime.ofInstant(
+                Dates.now().toInstant(), ZoneId.systemDefault());
+        if(sinceWhen.getDayOfMonth() == sinceWhen.getMonth().length(false)){
+            sinceWhen = sinceWhen.with(ChronoField.DAY_OF_MONTH, 1);
+        } else {
+            sinceWhen = sinceWhen.minusDays(7);
+        }
+        sinceWhen = sinceWhen.with(ChronoField.NANO_OF_DAY, 0);
+        updateChallengeResults(sinceWhen.toInstant(ZoneOffset.UTC));
+    }
+
+    public void updateChallengeResults(Instant sinceWhen){
         List<Game> games = new ArrayList<>();
         try {
-            games = gameService.getAllGames();
+            games = gameService.getAllGamesCreatedSince(sinceWhen);
         }  catch (Exception e){
             logger.error("Error when fetching games");
             logger.error(e);
@@ -85,7 +110,8 @@ public class GeoGuessrBot {
 
         for(Game game : games){
             try {
-                List<ChallengeResult> results = geoGuessrService.getResults(game.getChallengeToken());
+                ApiCredentials credentials = game.getLeague().getApiCredentials();
+                List<ChallengeResult> results = geoGuessrService.getResults(game.getChallengeToken(), credentials);
                 if(!results.isEmpty()){
                     game.setResultsPosted(true);
                     gameService.updateResultsForGame(game, results);
@@ -104,6 +130,14 @@ public class GeoGuessrBot {
                     .forEach(playerStats -> {
                         playerStats.generateStats();
                         System.out.println(playerStats);
+                    });
+            System.out.println();
+
+            gameService.getAllGames().stream()
+                    .map(GameStats::new)
+                    .forEach(gameStats -> {
+                        gameStats.generateStats();
+                        System.out.println(gameStats);
                     });
 
         }  catch (Exception e){

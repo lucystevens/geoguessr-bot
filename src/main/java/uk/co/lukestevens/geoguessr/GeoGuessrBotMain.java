@@ -22,14 +22,14 @@ public class GeoGuessrBotMain {
         if(args.length == 0){
             System.err.println(errorMessage);
         }
-        else if(args[0].equals("createChallenge")) {
-            bot.createChallenge();
+        else if(args[0].equals("createChallenges")) {
+            bot.createChallenges();
         }
         else if(args[0].equals("postChallengeResults")) {
             bot.postChallengeResults();
         }
         else if(args[0].equals("updateAllChallengeResults")) {
-            bot.updateAllChallengeResults();
+            bot.updateChallengeResults();
         }
         else if(args[0].equals("generateStats")) {
             bot.generateStats();

@@ -1,11 +1,9 @@
 package uk.co.lukestevens.geoguessr.models;
 
-import org.hibernate.annotations.Generated;
-import org.hibernate.annotations.GenerationTime;
-import org.hibernate.annotations.GenericGenerator;
 import uk.co.lukestevens.utils.Dates;
 
 import javax.persistence.*;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,10 +21,13 @@ public class Game {
     private String challengeToken;
 
     @Column(name = "created_at")
-    private Date createdAt;
+    private Instant createdAt;
 
     @Column(name = "results_posted")
     private boolean resultsPosted;
+
+    @Column(name = "post_results_after")
+    private Instant postResultsAfter;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "game_option_id")
@@ -35,10 +36,14 @@ public class Game {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<PlayerScore> playerScores = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "league_id")
+    private League league;
+
     public Game(String challengeToken, GameOption gameOption) {
         this.challengeToken = challengeToken;
         this.gameOption = gameOption;
-        this.createdAt = Dates.now();
+        this.createdAt = Dates.now().toInstant();
     }
 
     public Game() { }
@@ -51,7 +56,7 @@ public class Game {
         return challengeToken;
     }
 
-    public Date getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
     }
 
@@ -69,5 +74,17 @@ public class Game {
 
     public List<PlayerScore> getPlayerScores() {
         return playerScores;
+    }
+
+    public League getLeague() {
+        return league;
+    }
+
+    void setLeague(League league) {
+        this.league = league;
+    }
+
+    public void setPostResultsAfter(Instant postResultsAfter) {
+        this.postResultsAfter = postResultsAfter;
     }
 }

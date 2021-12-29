@@ -22,4 +22,24 @@ public class ChallengeResult {
     public int getTotalScore() {
         return totalScore;
     }
+
+    public ChallengeResult setGameToken(String gameToken) {
+        this.gameToken = gameToken;
+        return this;
+    }
+
+    public ChallengeResult setPlayerName(String playerName) {
+        this.playerName = playerName;
+        return this;
+    }
+
+    public ChallengeResult setUserId(String userId) {
+        this.userId = userId;
+        return this;
+    }
+
+    public ChallengeResult setTotalScore(int totalScore) {
+        this.totalScore = totalScore;
+        return this;
+    }
 }

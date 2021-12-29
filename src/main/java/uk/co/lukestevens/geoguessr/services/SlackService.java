@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import okhttp3.*;
 import uk.co.lukestevens.config.Config;
 import uk.co.lukestevens.geoguessr.models.Game;
+import uk.co.lukestevens.geoguessr.models.League;
 import uk.co.lukestevens.geoguessr.models.PlayerScore;
 import uk.co.lukestevens.geoguessr.util.StringTemplate;
 import uk.co.lukestevens.logging.Logger;
@@ -18,23 +19,17 @@ import java.util.stream.Collectors;
 
 public class SlackService {
 
-    private static final String SLACK_WEBHOOK_KEY = "slack.webhook";
-
-    private static final String CHALLENGE_TEMPLATE_KEY = "slack.challenge.template";
-    private static final String CHALLENGE_TEMPLATE_DEFAULT = "New Friday challenge! %s";
-
     private final Logger logger;
-    private final Config config;
     private final Gson gson = new Gson();
 
     @Inject
-    public SlackService(LoggingProvider loggingProvider, Config config) {
+    public SlackService(LoggingProvider loggingProvider) {
         this.logger = loggingProvider.getLogger(SlackService.class);
-        this.config = config;
     }
 
     public void sendChallengeMessage(Game game){
-        String messageTemplate = config.getAsStringOrDefault(CHALLENGE_TEMPLATE_KEY, CHALLENGE_TEMPLATE_DEFAULT);
+        League league = game.getLeague();
+        String messageTemplate = league.getChallengeTemplate();
         String challengeUrl = "https://www.geoguessr.com/challenge/" + game.getChallengeToken();
         logger.info("Sending challenge " + challengeUrl);
         String message = StringTemplate.fromTemplate(messageTemplate)
@@ -42,7 +37,7 @@ public class SlackService {
                 .withVariable("gameOption", game.getGameOption().getDescription())
                 .withVariable("timeLimit", game.getGameOption().getTimeLimit())
                 .build();
-        sendSlackMessage(message);
+        sendSlackMessage(message, league.getSlackWebhook());
     }
 
     public void sendResultsMessage(Game game){
@@ -63,20 +58,19 @@ public class SlackService {
                     .append(score.getScore())
                     .append("\n");
         }
-        sendSlackMessage(payload.toString());
+        sendSlackMessage(payload.toString(), game.getLeague().getSlackWebhook());
     }
 
-    void sendSlackMessage(String message){
+    void sendSlackMessage(String message, String webhookUrl){
         JsonObject payload = new JsonObject();
         payload.addProperty("text", message);
         String json = gson.toJson(payload);
 
-        String slackWebhook = config.getAsString(SLACK_WEBHOOK_KEY);
         OkHttpClient client = new OkHttpClient().newBuilder().build();
         MediaType mediaType = MediaType.parse("application/json");
         RequestBody body = RequestBody.create(json, mediaType);
         Request request = new Request.Builder()
-                .url(slackWebhook)
+                .url(webhookUrl)
                 .method("POST", body)
                 .addHeader("Content-Type", "application/json")
                 .build();
