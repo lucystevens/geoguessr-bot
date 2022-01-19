@@ -84,7 +84,7 @@ public class GameService {
     public List<Game> getGamesToPostResultsFor() throws IOException {
         return gameDao.list(
                 QueryFilters.and(
-                    QueryFilters.column("post_results_after").isGreaterThan(Dates.now()),
+                    QueryFilters.column("post_results_after").isLessThan(Dates.now()),
                     QueryFilters.column("results_posted").isEqualTo(false)
                 )
         ).stream()

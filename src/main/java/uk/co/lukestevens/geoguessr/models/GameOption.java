@@ -42,4 +42,24 @@ public class GameOption {
     public int getWeighting() {
         return weighting;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setMap(String map) {
+        this.map = map;
+    }
+
+    public void setTimeLimit(int timeLimit) {
+        this.timeLimit = timeLimit;
+    }
+
+    public void setWeighting(int weighting) {
+        this.weighting = weighting;
+    }
 }

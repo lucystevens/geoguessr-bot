@@ -34,8 +34,9 @@ public class Cached<T> {
         return cachedObject;
     }
 
+    // Not after = before or equal to
     public boolean isExpired(){
-        return cacheExpiry.before(Dates.now());
+        return !cacheExpiry.after(Dates.now());
     }
 
 }

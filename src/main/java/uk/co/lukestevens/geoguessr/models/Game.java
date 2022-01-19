@@ -80,11 +80,35 @@ public class Game {
         return league;
     }
 
-    void setLeague(League league) {
+    public void setLeague(League league) {
         this.league = league;
     }
 
     public void setPostResultsAfter(Instant postResultsAfter) {
         this.postResultsAfter = postResultsAfter;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setChallengeToken(String challengeToken) {
+        this.challengeToken = challengeToken;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getPostResultsAfter() {
+        return postResultsAfter;
+    }
+
+    public void setGameOption(GameOption gameOption) {
+        this.gameOption = gameOption;
+    }
+
+    public void setPlayerScores(List<PlayerScore> playerScores) {
+        this.playerScores = playerScores;
     }
 }

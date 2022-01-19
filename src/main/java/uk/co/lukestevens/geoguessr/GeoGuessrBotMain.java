@@ -28,7 +28,7 @@ public class GeoGuessrBotMain {
         else if(args[0].equals("postChallengeResults")) {
             bot.postChallengeResults();
         }
-        else if(args[0].equals("updateAllChallengeResults")) {
+        else if(args[0].equals("updateChallengeResults")) {
             bot.updateChallengeResults();
         }
         else if(args[0].equals("generateStats")) {

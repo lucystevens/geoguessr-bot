@@ -13,7 +13,7 @@ public class ApiCredentials {
     @Column(name = "credentials_id")
     private Long id;
 
-    @Column(name = "user")
+    @Column(name = "username")
     private String user;
 
     @Column(name = "device_token")
@@ -25,5 +25,21 @@ public class ApiCredentials {
 
     public String getCookieHeader(){
         return String.format(COOKIE_HEADER_TEMPLATE, deviceToken, ncfa);
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public void setDeviceToken(String deviceToken) {
+        this.deviceToken = deviceToken;
+    }
+
+    public void setNcfa(String ncfa) {
+        this.ncfa = ncfa;
     }
 }

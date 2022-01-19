@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,12 +35,16 @@ public class DatabaseUtils {
         return db.update(insertSql, description, map, weighting, timeLimit).get();
     }
 
-    public Long insertGame(String challengeToken, Long gameOption, Date createdAt) throws SQLException {
-        String insertSql = "INSERT INTO geoguessr.games " +
-                "(challenge_token, game_option_id, created_at) " +
-                "VALUES (?,?,?);";
+    public Long insertGame(String challengeToken, long gameOption, Date createdAt, long leagueId, Date postResultsAfter) throws SQLException {
+        return insertGame(challengeToken, gameOption, createdAt, leagueId, postResultsAfter, false);
+    }
 
-        return db.update(insertSql, challengeToken, gameOption, createdAt).get();
+    public Long insertGame(String challengeToken, long gameOption, Date createdAt, long leagueId, Date postResultsAfter, boolean resultsPosted) throws SQLException {
+        String insertSql = "INSERT INTO geoguessr.games " +
+                "(challenge_token, game_option_id, created_at, league_id, post_results_after, results_posted) " +
+                "VALUES (?,?,?,?,?,?);";
+
+        return db.update(insertSql, challengeToken, gameOption, createdAt, leagueId, postResultsAfter, resultsPosted).get();
     }
 
     public Long insertPlayer(String geoguessrId, String name) throws SQLException {
@@ -52,7 +55,39 @@ public class DatabaseUtils {
         return db.update(insertSql, geoguessrId, name).get();
     }
 
-    public Long assertGameCreated(String challengeToken, Long gameOption, boolean resultsPosted) throws SQLException, IOException {
+    public Long insertPlayerScore(long game, long player, int score) throws SQLException {
+        String insertSql = "INSERT INTO geoguessr.player_scores " +
+                "(game_id, player_id, score) " +
+                "VALUES (?,?,?);";
+
+        return db.update(insertSql, game, player, score).get();
+    }
+
+    public Long insertApiCredentials(String user, String token, String ncfa) throws SQLException {
+        String insertSql = "INSERT INTO geoguessr.api_credentials " +
+                "(username, device_token, ncfa) " +
+                "VALUES (?,?,?);";
+
+        return db.update(insertSql, user, token, ncfa).get();
+    }
+
+    public Long insertLeague(String name, String webhook, String challengeTemplate, String challengeDay, String resultsDay, long credentialsId) throws SQLException {
+        String insertSql = "INSERT INTO geoguessr.leagues " +
+                "(name, slack_webhook, challenge_template, challenge_day, results_day, credentials_id) " +
+                "VALUES (?,?,?,?,?,?);";
+
+        return db.update(insertSql, name, webhook, challengeTemplate, challengeDay, resultsDay, credentialsId).get();
+    }
+
+    public Long insertLeagueGameOption(long leagueId, long gameOptionId) throws SQLException {
+        String insertSql = "INSERT INTO geoguessr.league_game_options " +
+                "(league_id, game_option_id) " +
+                "VALUES (?,?);";
+
+        return db.update(insertSql, leagueId, gameOptionId).get();
+    }
+
+    public Long assertGameCreated(String challengeToken, long gameOption, boolean resultsPosted, long leagueId, Date postResultsAfter) throws SQLException, IOException {
         String sql = "SELECT * FROM geoguessr.games WHERE challenge_token=?;";
         try(DatabaseResult dbr = db.query(sql, challengeToken)){
             ResultSet rs = dbr.getResultSet();
@@ -60,7 +95,18 @@ public class DatabaseUtils {
             assertEquals(gameOption, rs.getLong("game_option_id"));
             assertNotNull(rs.getDate("created_at"));
             assertEquals(resultsPosted, rs.getBoolean("results_posted"));
+            assertEquals(leagueId, rs.getLong("league_id"));
+            assertEquals(postResultsAfter, rs.getDate("post_results_after"));
             return rs.getLong("game_id");
+        }
+    }
+
+    public void assertGameResultsPosted(long gameId, boolean expected) throws SQLException, IOException {
+        String sql = "SELECT * FROM geoguessr.games WHERE game_id=?;";
+        try(DatabaseResult dbr = db.query(sql, gameId)){
+            ResultSet rs = dbr.getResultSet();
+            assertTrue(rs.next(), "No rows returned for game_id " + gameId);
+            assertEquals(expected, rs.getBoolean("results_posted"));
         }
     }
 
@@ -88,6 +134,9 @@ public class DatabaseUtils {
         db.update("DELETE FROM geoguessr.player_scores;");
         db.update("DELETE FROM geoguessr.players;");
         db.update("DELETE FROM geoguessr.games;");
+        db.update("DELETE FROM geoguessr.league_game_options;");
+        db.update("DELETE FROM geoguessr.leagues;");
+        db.update("DELETE FROM geoguessr.api_credentials;");
         db.update("DELETE FROM geoguessr.game_options;");
     }
 }

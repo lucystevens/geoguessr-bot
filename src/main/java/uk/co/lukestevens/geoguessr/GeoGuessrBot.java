@@ -37,32 +37,39 @@ public class GeoGuessrBot {
         this.slackService = slackService;
     }
 
+    // TODO replace once base-lib is updated to support new DateTime
+    LocalDateTime now(){
+        return LocalDateTime.ofInstant(
+                Dates.now().toInstant(), ZoneId.systemDefault());
+    }
+
     public void createChallenges() {
         try {
-            DayOfWeek day = DayOfWeek.of(Dates.getCalendar().get(Calendar.DAY_OF_WEEK));
+            DayOfWeek day = DayOfWeek.of(now().get(ChronoField.DAY_OF_WEEK));
             for(League league : gameService.getLeaguesForChallengeDay(day)){
                 createChallenge(league);
             }
         } catch (Exception e){
             logger.error("Error when creating challenges");
-            logger.error(e);
+            e.printStackTrace();
         }
     }
 
-    public void createChallenge(League league) {
+    void createChallenge(League league) {
         try {
             GameOption gameOption = gameService.getRandomGameOption(league);
             Game game = geoGuessrService.createChallenge(gameOption, league.getApiCredentials());
             // Set post results after to the next results day for the league
-            game.setPostResultsAfter(LocalDateTime.ofInstant(
-                    Dates.now().toInstant(), ZoneId.systemDefault())
-                    .with(TemporalAdjusters.next(game.getLeague().getResultsDay()))
+            game.setPostResultsAfter(now()
+                    .with(TemporalAdjusters.next(league.getResultsDay()))
                     .with(ChronoField.NANO_OF_DAY, 0).toInstant(ZoneOffset.UTC));
+            league.addGame(game);
+
             gameService.saveGame(game);
             slackService.sendChallengeMessage(game);
         } catch (Exception e){
             logger.error("Error when creating a new challenge for league " + league.getName());
-            logger.error(e);
+            e.printStackTrace();
         }
     }
 
