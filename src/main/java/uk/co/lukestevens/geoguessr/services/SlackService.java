@@ -3,7 +3,6 @@ package uk.co.lukestevens.geoguessr.services;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import okhttp3.*;
-import uk.co.lukestevens.config.Config;
 import uk.co.lukestevens.geoguessr.models.Game;
 import uk.co.lukestevens.geoguessr.models.League;
 import uk.co.lukestevens.geoguessr.models.PlayerScore;
